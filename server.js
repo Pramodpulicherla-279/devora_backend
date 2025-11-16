@@ -6,6 +6,7 @@ const itemRoutes = require('./src/routes/itemRoutes');
 const courseRoutes = require('./src/routes/courseRoutes');
 const partRoutes = require('./src/routes/partRoutes');
 const lessonRoutes = require('./src/routes/lessonRoutes')
+const userRoutes = require('./src/routes/userRoutes'); // Import user routes
 
 // Load env vars
 dotenv.config();
@@ -26,6 +27,8 @@ app.use('/api/items', itemRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/parts', partRoutes);
 app.use('/api/lessons', lessonRoutes);
+app.use('/api/users', userRoutes); 
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(
