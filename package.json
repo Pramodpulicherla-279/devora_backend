@@ -1,0 +1,28 @@
+{
+  "name": "devora_backend",
+  "version": "1.0.0",
+  "description": "\"# devora_backend\"",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pramodpulicherla-279/devora_backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Pramodpulicherla-279/devora_backend/issues"
+  },
+  "homepage": "https://github.com/Pramodpulicherla-279/devora_backend#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mongoose": "^8.19.4"
+  }
+}
