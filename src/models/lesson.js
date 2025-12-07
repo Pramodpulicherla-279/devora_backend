@@ -5,6 +5,11 @@ const lessonSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    slug: {
+        type: String,
+        required: true,
+        unique: true // Ensures slugs are unique across all lessons
+    },
     content: {
         type: String, // Can be changed to store HTML, Markdown, etc.
         required: true,

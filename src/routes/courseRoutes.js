@@ -12,7 +12,7 @@ router.route('/').get(getCourses).post(createCourse);
 
 // Add the new route for getting a single course
 // GET /api/courses/:id
-router.route('/:id').get(getCourse);
+router.route('/:slug').get(getCourse);
 
 // Route to create/get parts within a course
 router.route('/:courseId/parts').get(getParts).post(createPart);
