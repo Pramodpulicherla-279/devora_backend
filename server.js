@@ -7,6 +7,8 @@ const courseRoutes = require('./src/routes/courseRoutes');
 const partRoutes = require('./src/routes/partRoutes');
 const lessonRoutes = require('./src/routes/lessonRoutes')
 const userRoutes = require('./src/routes/userRoutes'); // Import user routes
+const sitemapRouter = require('./routes/sitemap');
+
 
 // Load env vars
 dotenv.config();
@@ -15,7 +17,6 @@ dotenv.config();
 connectDB();
 
 const app = express();
-const sitemapRouter = require('./routes/sitemap');
 
 // Enable CORS
 app.use(cors());

@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 
 // Import your Lesson model
-const Lesson = require("../models/Lesson");
+const Lesson = require("../src/models/lesson");
+const Course = require("../src/models/course");
 
 router.get("/", async (req, res) => {
   try {
@@ -18,6 +19,9 @@ router.get("/", async (req, res) => {
 // Generate sitemap dynamically
 async function generateSitemap() {
   const baseUrl = process.env.FRONTEND_URL || "https://dev-el.co";
+
+  // Fetch courses and lessons from MongoDB
+  const courses = await Course.find().select("_id slug updatedAt").lean();
 
   // Fetch lessons from MongoDB
   const lessons = await Lesson.find({ isPublished: true })
@@ -37,13 +41,7 @@ async function generateSitemap() {
 
   <!-- Static Pages -->
   <url>
-    <loc>${baseUrl}/about</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <url>
-    <loc>${baseUrl}/contact</loc>
+    <loc>${baseUrl}/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -54,6 +52,21 @@ async function generateSitemap() {
     <priority>0.4</priority>
   </url>
 `;
+
+  // Add dynamic course URLs
+  courses.forEach((course) => {
+    const lastmod = course.updatedAt
+      ? course.updatedAt.toISOString()
+      : new Date().toISOString();
+    const identifier = course.slug || course._id;
+    xml += `
+  <url>
+    <loc>${baseUrl}/course/${identifier}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+  });
 
   // Add dynamic lesson URLs
   lessons.forEach((lesson) => {
