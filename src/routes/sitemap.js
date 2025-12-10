@@ -21,9 +21,10 @@ async function generateSitemap() {
   // Fetch courses and lessons from MongoDB
   const courses = await Course.find().select("_id slug updatedAt").lean();
 
-  // Fetch lessons from MongoDB
+  // Fetch lessons with their course reference
   const lessons = await Lesson.find()
-    .select('_id slug updatedAt')
+    .select('_id slug updatedAt courseId')
+    .populate('courseId', 'slug')
     .lean();
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -74,19 +75,22 @@ async function generateSitemap() {
   </url>`;
   });
 
-  // Add dynamic lesson URLs
+  // Add dynamic lesson URLs (nested under courses)
   lessons.forEach((lesson) => {
-    const lastmod = lesson.updatedAt
-      ? lesson.updatedAt.toISOString()
-      : new Date().toISOString();
-    const identifier = lesson.slug || lesson._id;
-    xml += `
+    if (lesson.courseId && lesson.courseId.slug) {
+      const lastmod = lesson.updatedAt
+        ? lesson.updatedAt.toISOString()
+        : new Date().toISOString();
+      const lessonIdentifier = lesson.slug || lesson._id;
+      const courseSlug = lesson.courseId.slug;
+      xml += `
   <url>
-    <loc>${baseUrl}/lesson/${identifier}</loc>
+    <loc>${baseUrl}/course/${courseSlug}/${lessonIdentifier}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>`;
+    }
   });
 
   xml += `
