@@ -7,7 +7,7 @@ const courseRoutes = require('./src/routes/courseRoutes');
 const partRoutes = require('./src/routes/partRoutes');
 const lessonRoutes = require('./src/routes/lessonRoutes')
 const userRoutes = require('./src/routes/userRoutes'); // Import user routes
-const sitemapRouter = require('./routes/sitemap');
+const sitemapRouter = require('./src/routes/sitemap');
 
 
 // Load env vars

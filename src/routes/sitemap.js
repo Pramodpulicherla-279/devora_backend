@@ -1,9 +1,7 @@
 const express = require("express");
 const router = express.Router();
-
-// Import your Lesson model
-const Lesson = require("../src/models/lesson");
-const Course = require("../src/models/course");
+const Course = require("../models/course");
+const Lesson = require("../models/lesson");
 
 router.get("/", async (req, res) => {
   try {
@@ -24,8 +22,8 @@ async function generateSitemap() {
   const courses = await Course.find().select("_id slug updatedAt").lean();
 
   // Fetch lessons from MongoDB
-  const lessons = await Lesson.find({ isPublished: true })
-    .select("course slug updatedAt")
+  const lessons = await Lesson.find()
+    .select('_id slug updatedAt')
     .lean();
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -51,6 +49,14 @@ async function generateSitemap() {
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
+
+  <!-- Courses Page -->
+  <url>
+    <loc>${baseUrl}/courses</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
 `;
 
   // Add dynamic course URLs
@@ -73,13 +79,13 @@ async function generateSitemap() {
     const lastmod = lesson.updatedAt
       ? lesson.updatedAt.toISOString()
       : new Date().toISOString();
-
+    const identifier = lesson.slug || lesson._id;
     xml += `
   <url>
-    <loc>${baseUrl}/course/${lesson.course}/${lesson.slug}</loc>
+    <loc>${baseUrl}/lesson/${identifier}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>`;
   });
 
