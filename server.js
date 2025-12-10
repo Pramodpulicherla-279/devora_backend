@@ -15,6 +15,7 @@ dotenv.config();
 connectDB();
 
 const app = express();
+const sitemapRouter = require('./routes/sitemap');
 
 // Enable CORS
 app.use(cors());
@@ -28,6 +29,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/parts', partRoutes);
 app.use('/api/lessons', lessonRoutes);
 app.use('/api/users', userRoutes); 
+app.use('/sitemap.xml', sitemapRouter);
 
 const PORT = process.env.PORT || 5000;
 
