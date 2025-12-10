@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Course = require("../models/course");
+const Part = require("../models/part");
 const Lesson = require("../models/lesson");
 
 router.get("/", async (req, res) => {
@@ -10,7 +11,14 @@ router.get("/", async (req, res) => {
     res.send(sitemap);
   } catch (error) {
     console.error("Sitemap generation error:", error);
-    res.status(500).send("Error generating sitemap");
+    // Return valid XML even on error
+    res.status(500).header("Content-Type", "application/xml");
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://dev-el.co/</loc>
+  </url>
+</urlset>`);
   }
 });
 
@@ -18,13 +26,26 @@ router.get("/", async (req, res) => {
 async function generateSitemap() {
   const baseUrl = process.env.FRONTEND_URL || "https://dev-el.co";
 
-  // Fetch courses and lessons from MongoDB
+  // Fetch courses
   const courses = await Course.find().select("_id slug updatedAt").lean();
 
-  // Fetch lessons with their course reference
+  // Fetch all parts with their course reference
+  const parts = await Part.find()
+    .select('_id course')
+    .populate('course', 'slug')
+    .lean();
+
+  // Fetch all lessons with their part reference
   const lessons = await Lesson.find()
-    .select('_id slug updatedAt courseId')
-    .populate('courseId', 'slug')
+    .select('_id slug updatedAt part')
+    .populate({
+      path: 'part',
+      select: 'course',
+      populate: {
+        path: 'course',
+        select: 'slug'
+      }
+    })
     .lean();
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -75,17 +96,19 @@ async function generateSitemap() {
   </url>`;
   });
 
-  // Add dynamic lesson URLs (nested under courses)
+  // Add dynamic lesson URLs (nested: course > part > lesson)
   lessons.forEach((lesson) => {
-    if (lesson.courseId && lesson.courseId.slug) {
+    // Check if we have the full chain: lesson -> part -> course
+    if (lesson.part && lesson.part.course && lesson.part.course.slug && lesson.slug) {
       const lastmod = lesson.updatedAt
         ? lesson.updatedAt.toISOString()
         : new Date().toISOString();
-      const lessonIdentifier = lesson.slug || lesson._id;
-      const courseSlug = lesson.courseId.slug;
+      const courseSlug = lesson.part.course.slug;
+      const lessonSlug = lesson.slug;
+      
       xml += `
   <url>
-    <loc>${baseUrl}/course/${courseSlug}/${lessonIdentifier}</loc>
+    <loc>${baseUrl}/course/${courseSlug}/${lessonSlug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
