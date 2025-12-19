@@ -8,6 +8,7 @@ const partRoutes = require('./src/routes/partRoutes');
 const lessonRoutes = require('./src/routes/lessonRoutes')
 const userRoutes = require('./src/routes/userRoutes'); // Import user routes
 const sitemapRouter = require('./src/routes/sitemap');
+const progressRoutes = require('./src/routes/userProgressRoutes');
 
 
 // Load env vars
@@ -31,6 +32,7 @@ app.use('/api/parts', partRoutes);
 app.use('/api/lessons', lessonRoutes);
 app.use('/api/users', userRoutes); 
 app.use('/sitemap.xml', sitemapRouter);
+app.use('/api/progress', progressRoutes);
 
 const PORT = process.env.PORT || 5000;
 
