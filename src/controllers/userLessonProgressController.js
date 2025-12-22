@@ -3,34 +3,38 @@ const Part = require('../models/part');
 const UserLessonProgress = require('../models/userLessonProgress');
 
 // helper: compute course progress for a given user
-async function getCourseProgress(userId, courseId) {
-  // All parts in this course
-  const parts = await Part.find({ course: courseId }).select('_id');
-  const partIds = parts.map(p => p._id);
+    // helper: compute course progress for a given user
+    async function getCourseProgress(userId, courseId) {
+        // All parts in this course
+        const parts = await Part.find({ course: courseId }).select('_id');
+        const partIds = parts.map(p => p._id);
 
-  if (!partIds.length) {
-    return { total: 0, completed: 0, percent: 0 };
-  }
+        if (!partIds.length) {
+            return { total: 0, completed: 0, percent: 0, completedLessonIds: [] };
+        }
 
-  // All lessons in this course
-  const courseLessons = await Lesson.find({ part: { $in: partIds } }).select('_id');
-  const courseLessonIds = courseLessons.map(l => l._id);
-  const total = courseLessonIds.length;
+        // All lessons in this course
+        const courseLessons = await Lesson.find({ part: { $in: partIds } }).select('_id');
+        const courseLessonIds = courseLessons.map(l => l._id);
+        const total = courseLessonIds.length;
 
-  if (!total) {
-    return { total: 0, completed: 0, percent: 0 };
-  }
+        if (!total) {
+            return { total: 0, completed: 0, percent: 0, completedLessonIds: [] };
+        }
 
-  const completed = await UserLessonProgress.countDocuments({
-    user: userId,
-    lesson: { $in: courseLessonIds },
-  });
+        // All completed lessons for this user in this course
+        const userCompleted = await UserLessonProgress.find({
+            user: userId,
+            lesson: { $in: courseLessonIds },
+        }).select('lesson');
 
-  const percent = Math.round((completed / total) * 100);
+        const completedLessonIds = userCompleted.map(doc => doc.lesson);
+        const completed = completedLessonIds.length;
+        const percent = Math.round((completed / total) * 100);
 
-  return { total, completed, percent };
-}
-
+        return { total, completed, percent, completedLessonIds };
+    }
+    
 exports.saveProgress = async (req, res, next) => {
   try {
     const { lessonId } = req.params;
@@ -65,12 +69,12 @@ exports.saveProgress = async (req, res, next) => {
   }
 };
 
-// OPTIONAL: GET course-level progress explicitly
+
 exports.getUserProgressByCourse = async (req, res, next) => {
   try {
     const { courseId } = req.params;
-    const { total, completed, percent } = await getCourseProgress(req.user._id, courseId);
-    return res.status(200).json({ total, completed, percent });
+    const { total, completed, percent, completedLessonIds } = await getCourseProgress(req.user._id, courseId);
+    return res.status(200).json({ total, completed, percent, completedLessonIds });
   } catch (err) {
     return next(err);
   }
