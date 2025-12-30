@@ -1,5 +1,5 @@
 const express = require('express');
-const { createLesson, getLessons, updateLesson, getLesson, getLessonBySlug } = require('../controllers/lessonController');
+const { createLesson, getLessons, updateLesson, getLesson, getLessonBySlug, searchLessons } = require('../controllers/lessonController');
 
 const router = express.Router({ mergeParams: true });
 
@@ -10,6 +10,8 @@ router.route('/parts/:partSlug/lessons').get(getLesson);
 
 // Get lesson by slug
 router.route('/slug/:slug').get(getLessonBySlug);
+// get lessons by search
+router.route('/lessons/search').get(searchLessons); 
 
 // This route updates a specific lesson by its ID
 router.route('/:id').put(updateLesson);

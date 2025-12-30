@@ -21,6 +21,27 @@ exports.getLessons = async (req, res, next) => {
   }
 };
 
+exports.searchLessons = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Query is required" });
+    }
+    //case-sensitive, partial match
+    const lessons = await Lesson.find({
+      title: { $regex: q, $options: "i" },
+    }).select("title slug");
+    res.status(200).json({
+      success: true,
+      data: lessons,
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
 exports.getLesson = async (req, res, next) => {
   try {
     const { partSlug } = req.params;
@@ -59,25 +80,30 @@ exports.getLesson = async (req, res, next) => {
 };
 
 exports.getLessonBySlug = async (req, res) => {
-    try {
-        const lesson = await Lesson.findOne({ slug: req.params.slug }).populate('part');
-        
-        if (!lesson) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Lesson not found' 
-            });
-        }
-        
-        res.status(200).json({
-            success: true,
-            data: lesson,
-        });
-    } catch (err) {
-        res.status(400).json({ success: false, error: err.message });
-    }
-};
+  try {
+    const lesson = await Lesson.findOne({ slug: req.params.slug }).populate({
+      path: "part",
+      populate: {
+        path: "course",
+        select: "slug title",
+      },
+    });
 
+    if (!lesson) {
+      return res.status(404).json({
+        success: false,
+        error: "Lesson not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: lesson,
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
 
 // @desc    Create a new lesson for a part
 // @route   POST /api/parts/:partId/lessons
