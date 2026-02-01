@@ -72,6 +72,14 @@ async function generateSitemap() {
     <priority>0.4</priority>
   </url>
 
+  <!-- Courses Page -->
+  <url>
+    <loc>${baseUrl}/courses</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
 `;
 
   // Add dynamic course URLs
