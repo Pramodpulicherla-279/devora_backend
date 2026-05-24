@@ -1,4 +1,4 @@
-const Track = require('../models/track');
+const Track = require('../models/Track');
 const Course = require('../models/course');
 const slugify = require('slugify');
 
