@@ -19,10 +19,23 @@ exports.getTracks = async (req, res) => {
 
 exports.getTrack = async (req, res) => {
   try {
-    const track = await Track.findById(req.params.id)
-      .populate({ path: 'courses', populate: { path: 'parts', select: 'title lessons' } })
-      .populate('domain', 'name slug');
+    const mongoose = require('mongoose');
+    const identifier = req.params.id;
+    const populate = [
+      { path: 'courses', populate: { path: 'parts', select: 'title lessons' } },
+      { path: 'domain', select: 'name slug' },
+    ];
+
+    let track = null;
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      track = await Track.findById(identifier).populate(populate);
+    }
+    if (!track) track = await Track.findOne({ slug: identifier }).populate(populate);
+    if (!track) {
+      track = await Track.findOne({ name: { $regex: new RegExp(`^${identifier}$`, 'i') } }).populate(populate);
+    }
     if (!track) return res.status(404).json({ success: false, error: 'Track not found' });
+
     res.json({ success: true, data: track });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
