@@ -5,7 +5,11 @@ const slugify = require('slugify');
 exports.getTracks = async (req, res) => {
   try {
     const tracks = await Track.find()
-      .populate('courses', 'title slug status')
+      .populate({
+        path: 'courses',
+        select: 'title slug status parts description',
+        populate: { path: 'parts', select: 'lessons' },
+      })
       .populate('domain', 'name slug');
     res.json({ success: true, data: tracks });
   } catch (err) {
