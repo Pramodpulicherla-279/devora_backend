@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/Pramodpulicherla-279/devora_backend#readme",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
