@@ -5,17 +5,10 @@ const slugify = require("slugify");
 exports.getLessons = async (req, res, next) => {
   try {
     const lessons = await Lesson.find({ part: req.params.partId });
-
     if (!lessons) {
-      return res
-        .status(404)
-        .json({ success: false, error: "No lessons found for this part" });
+      return res.status(404).json({ success: false, error: "No lessons found for this part" });
     }
-    res.status(200).json({
-      success: true,
-      count: lessons.length,
-      data: lessons,
-    });
+    res.status(200).json({ success: true, count: lessons.length, data: lessons });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
@@ -24,19 +17,9 @@ exports.getLessons = async (req, res, next) => {
 exports.searchLessons = async (req, res) => {
   try {
     const { q } = req.query;
-    if (!q) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Query is required" });
-    }
-    //case-sensitive, partial match
-    const lessons = await Lesson.find({
-      title: { $regex: q, $options: "i" },
-    }).select("title slug");
-    res.status(200).json({
-      success: true,
-      data: lessons,
-    });
+    if (!q) return res.status(400).json({ success: false, error: "Query is required" });
+    const lessons = await Lesson.find({ title: { $regex: q, $options: "i" } }).select("title slug");
+    res.status(200).json({ success: true, data: lessons });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
@@ -45,37 +28,15 @@ exports.searchLessons = async (req, res) => {
 exports.getLesson = async (req, res, next) => {
   try {
     const { partSlug } = req.params;
-
-    // First, find the part by slug
     const part = await Part.findOne({ slug: partSlug });
-
-    if (!part) {
-      return res.status(404).json({
-        success: false,
-        error: "Part not found",
-      });
-    }
-
-    // Then find all lessons for that part
+    if (!part) return res.status(404).json({ success: false, error: "Part not found" });
     const lessons = await Lesson.find({ part: part._id });
-
     if (!lessons || lessons.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: "No lessons found for this part",
-      });
+      return res.status(404).json({ success: false, error: "No lessons found for this part" });
     }
-
-    res.status(200).json({
-      success: true,
-      count: lessons.length,
-      data: lessons,
-    });
+    res.status(200).json({ success: true, count: lessons.length, data: lessons });
   } catch (err) {
-    res.status(400).json({
-      success: false,
-      error: err.message,
-    });
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
@@ -83,85 +44,68 @@ exports.getLessonBySlug = async (req, res) => {
   try {
     const lesson = await Lesson.findOne({ slug: req.params.slug }).populate({
       path: "part",
-      populate: {
-        path: "course",
-        select: "slug title",
-      },
+      populate: { path: "course", select: "slug title" },
     });
-
-    if (!lesson) {
-      return res.status(404).json({
-        success: false,
-        error: "Lesson not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: lesson,
-    });
+    if (!lesson) return res.status(404).json({ success: false, error: "Lesson not found" });
+    res.status(200).json({ success: true, data: lesson });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// @desc    Create a new lesson for a part
-// @route   POST /api/parts/:partId/lessons
 exports.createLesson = async (req, res) => {
   try {
     const { partId } = req.params;
-
-    // Generate slug from title
     const slug = slugify(req.body.title, { lower: true, strict: true });
-
-    const lessonData = {
-      ...req.body,
-      slug,
-      part: partId,
-    };
-
-    // Create the new lesson
+    const lessonData = { ...req.body, slug, part: partId };
     const lesson = await Lesson.create(lessonData);
-
-    // Add the new lesson's ID to the part's lessons array
-    await Part.findByIdAndUpdate(partId, {
-      $push: { lessons: lesson._id },
-    });
-
-    res.status(201).json({
-      success: true,
-      data: lesson,
-    });
+    await Part.findByIdAndUpdate(partId, { $push: { lessons: lesson._id } });
+    res.status(201).json({ success: true, data: lesson });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// @desc    Update a lesson
-// @route   PUT /api/lessons/:id
-// @access  Private/Admin
 exports.updateLesson = async (req, res) => {
-  const { title, content } = req.body;
-
   try {
     const lesson = await Lesson.findById(req.params.id);
+    if (!lesson) return res.status(404).json({ success: false, error: "Lesson not found" });
 
-    if (!lesson) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Lesson not found" });
-    }
-
-    // Update fields that are provided
-    lesson.title = title || lesson.title;
-    lesson.content = content !== undefined ? content : lesson.content;
+    const fields = ['title', 'content', 'status', 'difficulty', 'estimatedTime', 'audience', 'tags', 'quiz', 'interviewQuestions'];
+    fields.forEach(f => {
+      if (req.body[f] !== undefined) lesson[f] = req.body[f];
+    });
 
     const updatedLesson = await lesson.save();
+    res.status(200).json({ success: true, data: updatedLesson });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
 
-    res.status(200).json({
-      success: true,
-      data: updatedLesson,
-    });
+// @desc    Get all lessons (admin use)
+// @route   GET /api/lessons
+exports.getAllLessons = async (req, res) => {
+  try {
+    const lessons = await Lesson.find().select('title slug status difficulty part').lean();
+    res.status(200).json({ success: true, count: lessons.length, data: lessons });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+// @desc    Delete a lesson
+// @route   DELETE /api/lessons/:id
+exports.deleteLesson = async (req, res) => {
+  try {
+    const lesson = await Lesson.findById(req.params.id);
+    if (!lesson) return res.status(404).json({ success: false, error: 'Lesson not found' });
+
+    // Remove lesson reference from its part
+    await Part.findByIdAndUpdate(lesson.part, { $pull: { lessons: lesson._id } });
+    await Lesson.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({ success: true, message: 'Lesson deleted.' });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
