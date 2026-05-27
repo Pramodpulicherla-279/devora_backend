@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema({
     minlength: 6,
     select: false, // Don't return password by default
   },
+  enrolledTracks: {
+    type: [String],
+    default: [],
+  },
   createdAt: {
     type: Date,
     default: Date.now,
