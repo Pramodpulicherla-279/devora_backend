@@ -18,7 +18,11 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: true,                          // reflect the request origin (dev + prod)
+  credentials: true,
+  exposedHeaders: ['X-New-Token'],       // let the browser read our sliding-token header
+}));
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/items', itemRoutes);
