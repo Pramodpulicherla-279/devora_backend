@@ -1,10 +1,12 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 
-// Function to generate JWT
+// Generate a JWT that expires in 1 day.
+// The protect middleware re-issues this on every request so the clock resets
+// with each activity (sliding expiry — inactive for 1 day → logged out).
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d',
+        expiresIn: '1d',
     });
 };
 
