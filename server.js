@@ -25,6 +25,40 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
+// ── SEO HTTP headers ──────────────────────────────────────────────────────────
+// 1. Block search engines from indexing API endpoints.
+//    Without this, Googlebot wastes crawl budget on /api/* JSON responses.
+app.use('/api', (req, res, next) => {
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  next();
+});
+
+// 2. Global headers — improve CDN caching correctness + security posture
+app.use((req, res, next) => {
+  // Tells proxies/CDNs this response varies by encoding — prevents serving
+  // gzipped content to clients that don't support it.
+  res.setHeader('Vary', 'Accept-Encoding, Accept');
+
+  // Prevents MIME-type sniffing — small but meaningful trust signal for Google
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+
+  // Passes referrer data to GSC so traffic sources are correctly attributed
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  next();
+});
+
+// 3. Canonical domain enforcement.
+//    Redirects bare domain → www so Google treats them as one canonical origin.
+//    Only relevant if Render ever receives a request with host = dev-el.co.
+app.use((req, res, next) => {
+  if ((req.headers.host || '') === 'dev-el.co') {
+    return res.redirect(301, `https://www.dev-el.co${req.url}`);
+  }
+  next();
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.use('/api/items', itemRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/parts', partRoutes);
