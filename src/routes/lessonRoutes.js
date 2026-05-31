@@ -1,5 +1,5 @@
 const express = require('express');
-const { createLesson, getLessons, updateLesson, getLesson, getLessonBySlug, searchLessons, getAllLessons, deleteLesson } = require('../controllers/lessonController');
+const { createLesson, getLessons, updateLesson, getLesson, getLessonBySlug, searchLessons, getAllLessons, deleteLesson, reorderLessons } = require('../controllers/lessonController');
 
 const router = express.Router({ mergeParams: true });
 
@@ -9,6 +9,10 @@ router.route('/').get(getAllLessons);
 // Route to create a lesson within a part
 // POST /api/parts/:partId/lessons
 router.route('/:partId/lessons').get(getLessons).post(createLesson);
+
+// Reorder lessons within a part
+// PUT /api/lessons/:partId/reorder
+router.route('/:partId/reorder').put(reorderLessons);
 router.route('/parts/:partSlug/lessons').get(getLesson);
 
 // Get lesson by slug

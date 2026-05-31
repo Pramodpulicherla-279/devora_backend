@@ -94,6 +94,22 @@ exports.getAllLessons = async (req, res) => {
   }
 };
 
+// @desc    Reorder lessons within a part
+// @route   PUT /api/lessons/:partId/reorder
+exports.reorderLessons = async (req, res) => {
+  try {
+    const { partId } = req.params;
+    const { lessonIds } = req.body;
+    if (!Array.isArray(lessonIds)) {
+      return res.status(400).json({ success: false, error: 'lessonIds must be an array' });
+    }
+    await Part.findByIdAndUpdate(partId, { lessons: lessonIds });
+    res.status(200).json({ success: true });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
 // @desc    Delete a lesson
 // @route   DELETE /api/lessons/:id
 exports.deleteLesson = async (req, res) => {
