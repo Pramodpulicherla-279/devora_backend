@@ -76,6 +76,17 @@ exports.getUserProgressByCourse = async (req, res, next) => {
     }
 };
 
+// @route  DELETE /api/progress/tracks/:trackSlug
+exports.deleteTrackProgress = async (req, res, next) => {
+    try {
+        const { trackSlug } = req.params;
+        await UserLessonProgress.deleteMany({ user: req.user._id, trackSlug });
+        res.json({ success: true });
+    } catch (err) {
+        next(err);
+    }
+};
+
 // @route  GET /api/progress/parts/:partId?trackSlug=mern-stack
 exports.getUserProgressByPart = async (req, res, next) => {
     try {

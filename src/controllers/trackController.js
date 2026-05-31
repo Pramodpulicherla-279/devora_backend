@@ -102,3 +102,18 @@ exports.removeCourse = async (req, res) => {
     res.status(400).json({ success: false, error: err.message });
   }
 };
+
+exports.reorderCourses = async (req, res) => {
+  try {
+    const { courseIds } = req.body;
+    const track = await Track.findByIdAndUpdate(
+      req.params.id,
+      { courses: courseIds },
+      { new: true }
+    ).populate('courses', 'title slug status');
+    if (!track) return res.status(404).json({ success: false, error: 'Track not found' });
+    res.json({ success: true, data: track });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};

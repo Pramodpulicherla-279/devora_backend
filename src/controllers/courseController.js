@@ -87,6 +87,26 @@ exports.createCourse = async (req, res, next) => {
   }
 };
 
+exports.updateCourse = async (req, res) => {
+  try {
+    const identifier = req.params.slug;
+    const mongoose = require('mongoose');
+    let course = null;
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      course = await Course.findById(identifier);
+    }
+    if (!course) course = await Course.findOne({ slug: identifier });
+    if (!course) return res.status(404).json({ success: false, error: 'Course not found' });
+
+    const allowed = ['title', 'description', 'status', 'coverImage', 'icon'];
+    allowed.forEach(f => { if (req.body[f] !== undefined) course[f] = req.body[f]; });
+    const updated = await course.save();
+    res.status(200).json({ success: true, data: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
 exports.deleteCourse = async (req, res, next) => {
   try {
     const Part = require('../models/part');
