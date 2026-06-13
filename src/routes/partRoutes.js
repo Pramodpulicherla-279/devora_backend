@@ -1,5 +1,5 @@
 const express = require('express');
-const { createPart, getParts, deletePart, getAllParts } = require('../controllers/partController');
+const { createPart, getParts, deletePart, getAllParts, updatePart } = require('../controllers/partController');
 
 const router = express.Router({ mergeParams: true });
 
@@ -10,8 +10,9 @@ router.route('/').get(getAllParts);
 // POST /api/courses/:courseId/parts
 router.route('/:courseId/parts').get(getParts).post(createPart);
 
-// DELETE a specific part
+// GET/PUT/DELETE a specific part
+// PUT /api/parts/:id  — update title etc.
 // DELETE /api/parts/:id
-router.route('/:id').delete(deletePart);
+router.route('/:id').put(updatePart).delete(deletePart);
 
 module.exports = router;

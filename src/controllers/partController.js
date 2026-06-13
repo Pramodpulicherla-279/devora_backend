@@ -56,6 +56,22 @@ exports.createPart = async (req, res) => {
   }
 };
 
+// @desc    Update a part (title, etc.)
+// @route   PUT /api/parts/:id
+exports.updatePart = async (req, res) => {
+  try {
+    const part = await Part.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true, runValidators: true }
+    );
+    if (!part) return res.status(404).json({ success: false, error: 'Part not found' });
+    res.status(200).json({ success: true, data: part });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
 // @desc    Delete a part and all its lessons
 // @route   DELETE /api/parts/:id
 exports.deletePart = async (req, res) => {
