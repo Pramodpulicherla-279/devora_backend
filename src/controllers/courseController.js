@@ -3,7 +3,9 @@ const slugify = require('slugify');
 
 exports.getCourses = async (req, res, next) => {
   try {
-    const courses = await Course.find();
+    // Sort by creation order so the admin list is stable and predictable
+    // ("in the order I added them") rather than MongoDB's natural order.
+    const courses = await Course.find().sort({ createdAt: 1 });
     res.status(200).json({
       success: true,
       count: courses.length,
@@ -11,6 +13,24 @@ exports.getCourses = async (req, res, next) => {
     });
   } catch (err) {
     res.status(400).json({ success: false });
+  }
+};
+
+// Lightweight flat index of courses, parts and lessons for admin search.
+// Returns only the fields needed to match + navigate, so it stays cheap
+// even as content grows.
+exports.getSearchIndex = async (req, res) => {
+  try {
+    const Part = require('../models/part');
+    const Lesson = require('../models/lesson');
+    const [courses, parts, lessons] = await Promise.all([
+      Course.find().select('title slug icon status').sort({ createdAt: 1 }).lean(),
+      Part.find().select('title course').lean(),
+      Lesson.find().select('title slug part status').lean(),
+    ]);
+    res.status(200).json({ success: true, data: { courses, parts, lessons } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
