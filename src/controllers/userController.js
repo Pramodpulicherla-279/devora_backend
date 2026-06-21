@@ -97,7 +97,10 @@ exports.forgotPassword = async (req, res) => {
     user.passwordResetExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${rawToken}`;
+    const frontendUrl = process.env.NODE_ENV === 'production'
+      ? (process.env.FRONTEND_URL || 'https://dev-el.co')
+      : 'http://localhost:5180';
+    const resetUrl = `${frontendUrl}/reset-password/${rawToken}`;
 
     await sendEmail({
       to: user.email,

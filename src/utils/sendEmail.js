@@ -1,21 +1,29 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = async ({ to, subject, html }) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('Email service is not configured. Set EMAIL_USER and EMAIL_PASS environment variables.');
-  }
+// Created once at startup — reuses the SMTP connection pool instead of
+// handshaking on every forgot-password request.
+let transporter = null;
 
-  const transporter = nodemailer.createTransport({
+function getTransporter() {
+  if (transporter) return transporter;
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('Email service not configured. Set EMAIL_USER and EMAIL_PASS.');
+  }
+  transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // TLS
+    port: 465,
+    secure: true, // SSL — faster than STARTTLS negotiation on 587
+    pool: true,   // keep connections alive between sends
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS, // Use a Gmail App Password, not your account password
+      pass: process.env.EMAIL_PASS,
     },
   });
+  return transporter;
+}
 
-  await transporter.sendMail({
+const sendEmail = async ({ to, subject, html }) => {
+  await getTransporter().sendMail({
     from: `"Dev.EL" <${process.env.EMAIL_USER}>`,
     to,
     subject,
