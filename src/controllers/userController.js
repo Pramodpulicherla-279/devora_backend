@@ -143,6 +143,29 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+// @desc    Update current user's profile (name)
+// @route   PUT /api/users/profile
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, error: 'Name is required' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { name: name.trim() },
+      { new: true, runValidators: true }
+    );
+    res.json({
+      success: true,
+      name: user.name,
+      token: generateToken(user._id),
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
 // @desc    Enroll or unenroll from a track
 // @route   POST /api/users/tracks/enroll
 // body: { slug: String, action: 'enroll' | 'unenroll' }
