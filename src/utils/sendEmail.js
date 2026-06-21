@@ -18,6 +18,10 @@ function getTransporter() {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    // Fail fast instead of hanging if the host blocks/throttles outbound SMTP
+    connectionTimeout: 10000, // 10s to establish TCP connection
+    greetingTimeout: 10000,   // 10s to receive SMTP greeting
+    socketTimeout: 15000,     // 15s of socket inactivity
   });
   return transporter;
 }
