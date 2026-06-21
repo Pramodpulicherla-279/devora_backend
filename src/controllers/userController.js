@@ -117,9 +117,12 @@ exports.forgotPassword = async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
+    // Log full error to Render logs for diagnosis
+    console.error('[forgot-password] failed:', err);
     // Clear token on failure so a retry works
     await User.updateOne({ email }, { $unset: { passwordResetToken: 1, passwordResetExpires: 1 } });
-    res.status(500).json({ success: false, error: 'Could not send email. Please try again.' });
+    // TEMP: surface real error to diagnose prod SMTP failure (revert to generic after fix)
+    res.status(500).json({ success: false, error: `Could not send email: ${err.message}` });
   }
 };
 
