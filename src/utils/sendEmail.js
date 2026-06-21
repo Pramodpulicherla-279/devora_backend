@@ -1,17 +1,38 @@
 const nodemailer = require('nodemailer');
 const dns = require('dns').promises;
 
-// Created once at startup — reuses the SMTP connection pool instead of
-// handshaking on every forgot-password request.
+// ── Transport selection ──────────────────────────────────────────────
+// Production (Render) blocks outbound SMTP, so we send over Brevo's HTTPS
+// API (port 443) when BREVO_API_KEY is set. Localhost has no key and falls
+// back to Gmail SMTP, which works fine there.
+
+// ── Brevo HTTP API ───────────────────────────────────────────────────
+async function sendViaBrevo({ to, subject, html }) {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: 'Dev.EL', email: process.env.EMAIL_USER },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Brevo API ${res.status}: ${detail}`);
+  }
+}
+
+// ── Gmail SMTP (localhost fallback) ──────────────────────────────────
+// Created once — reuses the SMTP connection pool. Host is pinned to IPv4
+// because some networks resolve smtp.gmail.com to an unroutable IPv6.
 let transporter = null;
 
-// Build the transporter, pinning the SMTP host to an IPv4 address.
-//
-// Why: cloud hosts like Render have an IPv6 network interface but NO global
-// IPv6 route. nodemailer resolves smtp.gmail.com to both A (IPv4) and AAAA
-// (IPv6) records and picks one at RANDOM — when it picks the IPv6 address the
-// connection fails with `ENETUNREACH`. Resolving to IPv4 ourselves and passing
-// the literal IP (with `servername` for TLS SNI + cert validation) avoids it.
 async function buildTransporter() {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     throw new Error('Email service not configured. Set EMAIL_USER and EMAIL_PASS.');
@@ -22,29 +43,26 @@ async function buildTransporter() {
     const ipv4 = await dns.resolve4('smtp.gmail.com');
     if (ipv4 && ipv4.length) host = ipv4[0];
   } catch (_e) {
-    // DNS resolve4 failed — fall back to the hostname (nodemailer resolves it)
+    // resolve4 failed — fall back to the hostname
   }
 
   return nodemailer.createTransport({
-    host,             // IPv4 literal (or hostname fallback)
+    host,
     port: 465,
-    secure: true,     // SSL
-    pool: true,       // keep connections alive between sends
+    secure: true,
+    pool: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    // Required when host is an IP literal: TLS SNI + certificate is validated
-    // against smtp.gmail.com, not the bare IP.
-    tls: { servername: 'smtp.gmail.com' },
-    // Fail fast instead of hanging if the host blocks/throttles outbound SMTP
+    tls: { servername: 'smtp.gmail.com' }, // SNI + cert validation when host is an IP
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
   });
 }
 
-const sendEmail = async ({ to, subject, html }) => {
+async function sendViaSmtp({ to, subject, html }) {
   if (!transporter) transporter = await buildTransporter();
   await transporter.sendMail({
     from: `"Dev.EL" <${process.env.EMAIL_USER}>`,
@@ -52,6 +70,13 @@ const sendEmail = async ({ to, subject, html }) => {
     subject,
     html,
   });
+}
+
+const sendEmail = async ({ to, subject, html }) => {
+  if (process.env.BREVO_API_KEY) {
+    return sendViaBrevo({ to, subject, html });
+  }
+  return sendViaSmtp({ to, subject, html });
 };
 
 module.exports = sendEmail;
