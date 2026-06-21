@@ -71,7 +71,7 @@ exports.updateLesson = async (req, res) => {
     const lesson = await Lesson.findById(req.params.id);
     if (!lesson) return res.status(404).json({ success: false, error: "Lesson not found" });
 
-    const fields = ['title', 'content', 'status', 'difficulty', 'estimatedTime', 'audience', 'tags', 'quiz', 'interviewQuestions'];
+    const fields = ['title', 'content', 'status', 'difficulty', 'estimatedTime', 'audience', 'tags', 'quiz', 'interviewQuestions', 'fillBlanks'];
     fields.forEach(f => {
       if (req.body[f] !== undefined) lesson[f] = req.body[f];
     });
