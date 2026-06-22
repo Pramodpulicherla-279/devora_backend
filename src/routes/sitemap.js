@@ -36,7 +36,9 @@ router.get('/', async (req, res) => {
 // ── Sitemap generator ────────────────────────────────────────────────────────
 
 async function generateSitemap() {
-  const base = process.env.FRONTEND_URL || 'https://www.dev-el.co';
+  // Canonical host is non-www (www 301-redirects to it). Keep this in sync
+  // with the canonical tags emitted by the frontend useSEO hook.
+  const base = process.env.FRONTEND_URL || 'https://dev-el.co';
   const now  = new Date().toISOString();
 
   // Parallelise DB queries — was sequential, now fires both at once
