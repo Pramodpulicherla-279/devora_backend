@@ -18,7 +18,10 @@ exports.searchLessons = async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) return res.status(400).json({ success: false, error: "Query is required" });
-    const lessons = await Lesson.find({ title: { $regex: q, $options: "i" } }).select("title slug");
+    const lessons = await Lesson.find({ title: { $regex: q, $options: "i" } })
+      .select("title slug part")
+      .populate({ path: "part", select: "course", populate: { path: "course", select: "title" } })
+      .limit(10);
     res.status(200).json({ success: true, data: lessons });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
