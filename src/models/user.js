@@ -32,6 +32,10 @@ const userSchema = new mongoose.Schema({
     type: [String],
     default: [],
   },
+  quizStats: {
+    correct: { type: Number, default: 0 },
+    total:   { type: Number, default: 0 },
+  },
   passwordResetToken:   { type: String },
   passwordResetExpires: { type: Date },
   createdAt: {
