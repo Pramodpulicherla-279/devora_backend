@@ -172,6 +172,37 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+// @desc    Get quiz stats for current user
+// @route   GET /api/users/quiz-stats
+exports.getQuizStats = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('quizStats');
+        res.json({ success: true, quizStats: user.quizStats || { correct: 0, total: 0 } });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+// @desc    Increment quiz stats for current user
+// @route   PUT /api/users/quiz-stats
+// body: { correct: Number, total: Number }
+exports.updateQuizStats = async (req, res) => {
+    const { correct, total } = req.body;
+    if (typeof correct !== 'number' || typeof total !== 'number' || correct < 0 || total <= 0 || correct > total) {
+        return res.status(400).json({ success: false, error: 'Invalid quiz stats' });
+    }
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { $inc: { 'quizStats.correct': correct, 'quizStats.total': total } },
+            { new: true, upsert: false }
+        ).select('quizStats');
+        res.json({ success: true, quizStats: user.quizStats });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
 // @desc    Enroll or unenroll from a track
 // @route   POST /api/users/tracks/enroll
 // body: { slug: String, action: 'enroll' | 'unenroll' }
